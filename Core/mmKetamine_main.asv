@@ -1,0 +1,113 @@
+%% mainScript
+% Author: Wooseong Choi
+% Summary: main script for Multimodal-Ketamine-TMS Study
+
+%% intialize work space
+clc; clear; close all;
+data_path = '/project/wooseong_1271/Multimodal_Ketamine_Data';
+addpath(genpath(data_path));
+addpath(genpath('/home1/wooseong/Multimodal_Ketamine'));
+
+%% initalize fUSI data
+allRats = {'rat10', 'rat13', 'rat14'};
+
+% all samples
+sample_idx = struct;
+
+% M1 , S1 , thalamus, random, random
+sample_idx.rat10 = [16 87; 8 62; 59 46 ];
+sample_idx.rat13 = [18 110; 8 62; 39 37; 79 25; 84 96];
+sample_idx.rat14 = [18 24; 6 77; 51 82];
+
+TMS_onset.rat10 = 2400;
+TMS_onset.rat13 = 2300;
+TMS_onset.rat14 = 1800;
+
+% specify samples
+sampleName = allRats{2};
+idx = sample_idx.(sampleName);
+filename =[sampleName '.scan'];
+
+%% preprocess
+mat4D = h5read(filename, '/Data');
+mat3D = permute(squeeze(mat4D), [2 1 3]);
+filt_params = struct('fs', 1, 'fc1', 0.01, 'fc2', 0.3,...
+                     'filtType','low', 'order',4,...
+                     'filtOpt', 0);
+norm_params = struct('duration',720);
+Mpreproc = preprocFUSI(mat3D, filt_params, norm_params); 
+Mpreproc = Mpreproc(:,:,1:TMS_onset.(sampleName)); % cut after TMS
+
+%gather dim
+dim = struct;
+[dim.y, dim.x, dim.t] = size(Mpreproc);
+numVoxels = dim.y * dim.x;
+
+% clear raw data for memory
+clear mat4D; clear mat3D;
+
+
+%% prepare PPS vector
+
+% Read in PPS time stamps
+fileName = [sampleName '.xlsx'];
+
+pps = readmatrix(fileName);             
+pps = floor(pps(pps<dim.t));
+pps = reshape(pps, 2, [])';
+
+% initialize
+binaryEvent1 = zeros(1, size(Mpreproc,3));  
+binaryEvent2 = zeros(1, size(Mpreproc,3));  
+% binaryEvent3 = zeros(1, size(Mpreproc2,3));  
+
+% single event and duration representations
+for i = 1:size(pps, 1)
+    t1 = pps(i, 1);
+    t2 = pps(i, 2);
+    binaryEvent1(t1) = 1;
+    binaryEvent2(t1:t2) = 1;
+end
+
+% % each PS representation
+% interpl_pps = pps * 10;
+% for i = 1:size(pps,1)
+%     t1 = interpl_pps(i,1);
+%     t2 = interpl_pps(i,2);
+%     binaryEvent3(t1:4:t2) = 1;
+% end
+
+%% plot fusi signal
+figure; 
+pbaspect([3 1 1]);
+
+v = squeeze(Mpreproc(idx(2,1),idx(2,2),:));
+plot(v,'b','LineWidth', 2); hold on;
+title('S1 voxel', 'fontsize', 34, 'fontweight', 'b');
+ylim([-3 100]);
+
+% %plot pps events
+for i = 1:size(pps,1)
+    t1 = pps(i,1);
+    t2 = pps(i,2);
+    y_limits = ylim;
+    patch([t1 t2 t2 t1],...
+        [y_limits(1) y_limits(1) y_limits(2) y_limits(2)],...
+        'k', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+end
+xlim([0 TMS_onset.(sampleName)]);
+legend('fUSI', 'PPS events');
+ylabel('Z-score');
+xlabel('Seconds');
+legend('fUSI', 'PPS events');
+
+% save 
+saveas(gcf, fullfile(data_path, 's1_representative_signal.fig'));
+   
+%% RLS 
+
+lambdas = [0.8 0.9 0.95  0.0.99];
+m = 100;                             
+tic;
+rls = optRLS(Mpreproc, binaryEvent1, m, lambdas);
+toc;
