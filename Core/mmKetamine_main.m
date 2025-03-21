@@ -117,7 +117,7 @@ saveas(gcf, fullfile(data_path, 's1_representative_signal.fig'));
    
 %% RLS 
 
-lambdas = [0.8 0.9 0.95 0.98 0.99 0.992 0.994 0.996 0.999];
+lambdas = [0.8 0.9 0.95 0.99 0.992 0.994 0.996 0.999];
 m = 80;                             
 tic;
 rls = optRLS(Mpreproc, binaryEvent1, m, lambdas);
@@ -139,6 +139,7 @@ xlim([1 dim.t]);
 xlabel('Seconds');
 ylabel('NMSE');
 set(gca,'fontsize',18);
+legend(labels);
 
 % save 
 saveas(gcf, fullfile(data_path, 's1_representative_nmse.fig'));
