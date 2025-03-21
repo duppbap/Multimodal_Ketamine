@@ -34,7 +34,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates)
     all_yhat = cell(numLambda, numVoxels);              
 
     %% RLS for each candidate lambda   
-   for v = 1:numVoxels
+   parfor v = 1:numVoxels
         y = Y(:,v);
         for ii = 1:numLambda
             lambda = lambdaCandidates(ii);  
