@@ -27,7 +27,7 @@ sample_idx.rat10 = [16 87; 8 62; 59 46 ];
 sample_idx.rat13 = [18 110; 8 62; 39 37; 79 25; 84 96];
 sample_idx.rat14 = [18 24; 6 77; 51 82];
 
-TMS_onset.rat10 = 2400;
+TMS_onset.rat10 = 2300;
 TMS_onset.rat13 = 2300;
 TMS_onset.rat14 = 1800;
 
