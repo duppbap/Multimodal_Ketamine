@@ -90,9 +90,10 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates)
             end
 
             % calculate batch r^2
+            batch_y = y(m-1:end);
             batch_yhat = sum(A(m-1:end,:) .* k_t(:,m-1:end)', 2);
-            SS_res = sum((y - batch_yhat).^2);
-            SS_tot = sum((y-mean(y)).^2);
+            SS_res = sum((batch_y - batch_yhat).^2);
+            SS_tot = sum((batch_y-mean(batch_y)).^2);
             r2{ii,v} = 1 - (SS_res / SS_tot);
 
             % Store lambda-specific parameters for each voxel
