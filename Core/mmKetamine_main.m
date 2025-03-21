@@ -120,7 +120,7 @@ saveas(gcf, fullfile(data_path, 's1_representative_signal.fig'));
 % potential hyperparameters:
 lambdas = [0.8 0.9 0.95 0.99...
            0.993 0.996 0.999]; %forgetting factor
-alphas = [0,1,10,100,1000,10000,100000,1000000];
+alphas = 0;
 
 m = 80;             
 
