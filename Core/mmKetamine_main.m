@@ -32,7 +32,7 @@ TMS_onset.rat13 = 2300;
 TMS_onset.rat14 = 1800;
 
 % specify samples
-sampleName = allRats{3};
+sampleName = allRats{2};
 idx = sample_idx.(sampleName);
 filename =[sampleName '.scan'];
 
