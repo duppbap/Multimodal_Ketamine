@@ -37,7 +37,7 @@ idx = sample_idx.(sampleName);
 filename =[sampleName '.scan'];
 
 %update data path
-data_path = [data_path '/' allRats{3} '/figures'];
+data_path = [data_path '/' allRats{3} '/figures_m20'];
 
 %% preprocess
 mat4D = h5read(filename, '/Data');
