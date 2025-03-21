@@ -261,13 +261,11 @@ colormap parula; colorbar;
 set(gca,'fontsize',18);
 saveas(gcf, fullfile(data_path, '3d_kernel.fig'));
 
-% spatial filter
+% heat map
 spatial_size = 3;
 hanning_1D = hann(spatial_size);
 hanning_3D = hanning_1D .* permute(hanning_1D, [2 1]) .* permute(hanning_1D, [3 2 1]);
 hanning_3D = hanning_3D / sum(hanning_3D(:));
-
-% heat map
 figure; 
 K_nobias = khat(2:end, :);
 K_nobias = convn(K_nobias, hanning_3D, 'same');
