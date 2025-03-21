@@ -34,7 +34,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates)
     all_yhat = cell(numLambda, numVoxels);              
 
     %% RLS for each candidate lambda   
-    parfor v = 1:numVoxels
+   for v = 1:numVoxels
         y = Y(:,v);
         for ii = 1:numLambda
             lambda = lambdaCandidates(ii);  
@@ -90,9 +90,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates)
             end
 
             % calculate batch r^2
-            batch_yhat = sum(A(m-1:end,:) .* k_t', 2);
-
-
+            batch_yhat = sum(A(m-1:end,:) .* k_t(:,m-1:end)', 2);
             SS_res = sum((y - batch_yhat).^2);
             SS_tot = sum((y-mean(y)).^2);
             r2{ii,v} = 1 - (SS_res / SS_tot);
