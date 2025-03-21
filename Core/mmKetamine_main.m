@@ -118,7 +118,7 @@ saveas(gcf, fullfile(data_path, 's1_representative_signal.fig'));
 %% RLS 
 
 lambdas = [0.8 0.9 0.95 0.99 0.992 0.994 0.996 0.999];
-m = 20;                             
+m = 80;                             
 tic;
 rls = optRLS(Mpreproc, binaryEvent1, m, lambdas);
 toc;
