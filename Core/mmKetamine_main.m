@@ -118,13 +118,11 @@ saveas(gcf, fullfile(data_path, 's1_representative_signal.fig'));
 %% RLS 
 
 lambdas = [0.8 0.9 0.95 0.99 0.993 0.996 0.999];
-m = 80;                             
+m = 80;             
+alpha = 10;
 tic;
-rls = optRLS(Mpreproc, binaryEvent1, m, lambdas);
+rls = optRLS(Mpreproc, binaryEvent1, m, lambdas, alpha);
 toc;
-
-save([data_path '/' allRats{3} '/rls_results.mat'], 'rls');
-
 
 
 %% compare NMSE for each lambda for a representative voxel

@@ -1,4 +1,4 @@
-function [rls] = optRLS(Y, u, m, lambdaCandidates)
+function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha)
 % optRLS - Optimize the forgetting factor (lambda) for a representative voxel using RLS.
 %
 %   INPUTS:
@@ -6,6 +6,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates)
 %       u                - Input (1D vector)
 %       m                - Number of impulse response coefficients
 %       lambdaCandidates - Vector of candidate forgetting factor values (in [0, 1])
+%       alpha            - L2 norm factor
 %
 %   OUTPUTS:
 %       rls - Struct containing MSE, NMSE, R², kernel estimates, and design matrix.
@@ -42,7 +43,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates)
             % Initialize RLS parameters
             k = zeros(m,1);
             k_t = zeros(m,n);
-            P = sigma * eye(m);
+            P = sigma * eye(m); %L2 norm
 
             % Initialize running values
             runningMeanY = mean(y(1:m-1));
