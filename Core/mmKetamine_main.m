@@ -118,7 +118,7 @@ saveas(gcf, fullfile(data_path, 's1_representative_signal.fig'));
 %% RLS 
 
 lambdas = [0.8 0.9 0.95 0.99 0.992 0.994 0.996 0.999];
-m = 80;                             
+m = 20;                             
 tic;
 rls = optRLS(Mpreproc, binaryEvent1, m, lambdas);
 toc;
@@ -192,14 +192,15 @@ saveas(gcf, fullfile(data_path, 'lambda_histogram.fig'));
 %% plot fit for representative voxel
 M2D = double(reshape(Mpreproc, numVoxels, dim.t ));
 
-%Retrieve data from representative voxel
+%Retrieve data from representative voxel and its optimal lambda
 linear_idx = sub2ind([dim.y dim.x], idx(2,1), idx(2,2)); 
 y = M2D(linear_idx,:);
+y = y(m:end); %truncate to match y hat
 optLIdx = optimalLambdaIdx(linear_idx);
 optL = optimalLambdas(linear_idx);
 yhat = rls.all_y{optLIdx,linear_idx}';
 khat = rls.all_k{optLIdx,linear_idx};
-residuals = y(m:end) - yhat;
+residuals = y - yhat;
 
 % ---Visualization---
 % yhat vs yobserved (overlay)
@@ -207,7 +208,7 @@ figure;
 plot(y, 'k', 'LineWidth', 1); hold on;
 plot(yhat, 'm', 'LineWidth', 2);
 plot(khat(1,:),'c', 'LineWidth', 2);
-legend('Observed', 'Predicted','Bias');
+legend('Observed','Predicted','Time-Varying Bias');
 title(sprintf('Observed vs. Predicted (Lambda: %f)', optL));
 xlabel('Seconds'); ylabel('Amplitude');
 xlim([0 length(yhat)]);
@@ -230,7 +231,7 @@ saveas(gcf, fullfile(data_path, 'S1_scatter1.fig'));
 
 % Time-varying bias term (k0)
 figure; 
-plot(1:dim.t, khat(1,:),'k', 'LineWidth', 2);
+plot(khat(1,:),'k', 'LineWidth', 2);
 title('Time-Varying Bias Term (k0)');
 xlabel('Seconds'); ylabel('Bias Amplitude');
 set(gca,'fontsize',20);
