@@ -43,7 +43,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha)
             % Initialize RLS parameters
             k = zeros(m,1);
             k_t = zeros(m,n);
-            P = (1/alpha) * eye(m); %L2 norm
+            P = sigma * eye(m); %L2 norm
 
             % Initialize running values
             runningMeanY = mean(y(1:m-1));

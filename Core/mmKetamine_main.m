@@ -32,7 +32,7 @@ TMS_onset.rat13 = 2300;
 TMS_onset.rat14 = 1800;
 
 % specify samples
-sampleName = allRats{2};
+sampleName = allRats{3};
 idx = sample_idx.(sampleName);
 filename =[sampleName '.scan'];
 
@@ -117,9 +117,13 @@ saveas(gcf, fullfile(data_path, 's1_representative_signal.fig'));
    
 %% RLS 
 
-lambdas = [0.8 0.9 0.95 0.99 0.993 0.996 0.999];
+% potential hyperparameters:
+lambdas = [0.8 0.9 0.95 0.99...
+           0.993 0.996 0.999]; %forgetting factor
+alphas = [0,1,10,100,1000,10000,100000,1000000];
+
 m = 80;             
-alpha = 1000;
+
 tic;
 rls = optRLS(Mpreproc, binaryEvent1, m, lambdas, alpha);
 toc;
