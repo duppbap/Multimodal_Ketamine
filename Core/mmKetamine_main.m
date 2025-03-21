@@ -198,7 +198,7 @@ optLIdx = optimalLambdaIdx(linear_idx);
 optL = optimalLambdas(linear_idx);
 yhat = rls.all_y{optLIdx,linear_idx}';
 khat = rls.all_k{optLIdx,linear_idx};
-residuals = y - yhat;
+residuals = y(m-1:end) - yhat;
 
 % ---Visualization---
 % yhat vs yobserved (overlay)
