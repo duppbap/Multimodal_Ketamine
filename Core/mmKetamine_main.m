@@ -37,7 +37,7 @@ idx = sample_idx.(sampleName);
 filename =[sampleName '.scan'];
 
 %update data path
-data_path = [data_path '/' allRats{3} '/figures_m20'];
+data_path = [data_path '/' allRats{2} '/figures_m20'];
 
 %% preprocess
 mat4D = h5read(filename, '/Data');
@@ -118,7 +118,7 @@ saveas(gcf, fullfile(data_path, 's1_representative_signal.fig'));
 %% RLS 
 
 lambdas = [0.8 0.9 0.95 0.98 0.99 0.999];
-m = 80;                             
+m = 20;                             
 tic;
 rls = optRLS(Mpreproc, binaryEvent1, m, lambdas);
 toc;
