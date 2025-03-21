@@ -204,13 +204,13 @@ residuals = y(m:end) - yhat;
 % ---Visualization---
 % yhat vs yobserved (overlay)
 figure; 
-plot(1:dim.t, y, 'k', 'LineWidth', 1); hold on;
-plot(1:dim.t, yhat, 'm', 'LineWidth', 2);
-plot(1:dim.t, khat(1,:),'c', 'LineWidth', 2);
+plot(y, 'k', 'LineWidth', 1); hold on;
+plot(yhat, 'm', 'LineWidth', 2);
+plot(khat(1,:),'c', 'LineWidth', 2);
 legend('Observed', 'Predicted','Bias');
 title(sprintf('Observed vs. Predicted (Lambda: %f)', optL));
 xlabel('Seconds'); ylabel('Amplitude');
-xlim([0 dim.t]);
+xlim([0 length(yhat)]);
 set(gca,'fontsize',20);
 hold off;
 saveas(gcf, fullfile(data_path, 'S1_fit.fig'));
@@ -234,7 +234,7 @@ plot(1:dim.t, khat(1,:),'k', 'LineWidth', 2);
 title('Time-Varying Bias Term (k0)');
 xlabel('Seconds'); ylabel('Bias Amplitude');
 set(gca,'fontsize',20);
-xlim([0 dim.t]);
+xlim([0 length(khat(1,:))]);
 
 % 3D Time-Varying Kernels (Perspective View)
 % half hanning window for temporal filter
