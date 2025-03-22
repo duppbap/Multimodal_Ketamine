@@ -43,8 +43,8 @@ data_path = [data_path '/' allRats{3} '/figures'];
 mat4D = h5read(filename, '/Data');
 mat3D = permute(squeeze(mat4D), [2 1 3]);
 filt_params = struct('fs', 1, 'fc1', 0.01, 'fc2', 0.3,...
-                     'filtType','low', 'order',4,...
-                     'filtOpt', 0);
+                     'filtType','bandpass', 'order',4,...
+                     'filtOpt', 1);
 norm_params = struct('duration',720);
 Mpreproc = preprocFUSI(mat3D, filt_params, norm_params); 
 Mpreproc = Mpreproc(:,:,1:TMS_onset.(sampleName)); % cut after TMS
