@@ -37,7 +37,7 @@ idx = sample_idx.(sampleName);
 filename =[sampleName '.scan'];
 
 %update data path
-data_path = [data_path '/' sampleName '/figures'];
+data_path = [data_path '/' sampleName '/figures_20250324'];
 
 %% preprocess
 mat4D = h5read(filename, '/Data');
@@ -170,6 +170,9 @@ xlabel('Seconds');
 ylabel('e(t)^2 - \sigma_\eta^2');
 set(gca,'fontsize',18);
 legend(labels);
+
+% save 
+saveas(gcf, fullfile(data_path, 's1_representative_alignment.fig'));
 
 
 %% extract the optimal lambda for each voxel
