@@ -37,7 +37,7 @@ idx = sample_idx.(sampleName);
 filename =[sampleName '.scan'];
 
 %update data path
-data_path = [data_path '/' sampleName '/figures_20250324'];
+data_path = [data_path '/' sampleName '/figures_20250324_2'];
 
 %% preprocess
 mat4D = h5read(filename, '/Data');
@@ -158,16 +158,16 @@ saveas(gcf, fullfile(data_path, 's1_representative_nmse.fig'));
 alignment = rls.Alignment(:,linear_idx);
 
 figure;
-sgtitle('Alignment','fontsize', 20, 'fontweight', 'b');
+sgtitle('Misalignment','fontsize', 20, 'fontweight', 'b');
 for i = 1:length(lambdas)
     xx = alignment{i};
-    plot(x, 'LineWidth', 2);
+    plot(xx, 'LineWidth', 2);
     hold on;
     labels{i} = sprintf('λ = %.4f', lambdas(i));
 end
 xlim([m dim.t]);
 xlabel('Seconds');
-ylabel('e(t)^2 - \sigma_\eta^2');
+ylabel('\sigma_e^2 - \sigma_\eta^2');
 set(gca,'fontsize',18);
 legend(labels);
 
