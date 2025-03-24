@@ -1,4 +1,4 @@
-function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha)
+function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha, beta)
 % optRLS - Optimize the forgetting factor (lambda) for a representative voxel using RLS.
 %
 %   INPUTS:
@@ -6,7 +6,8 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha)
 %       u                - Input (1D vector)
 %       m                - Number of impulse response coefficients
 %       lambdaCandidates - Vector of candidate forgetting factor values (in [0, 1])
-%       alpha            - L2 norm factor
+%       alpha            - forgetting factor for a-prior error (EMSE)
+%       beta             - forgetting factor for floor noise (EMSE)
 %
 %   OUTPUTS:
 %       rls - Struct containing MSE, NMSE, R², kernel estimates, and design matrix.
@@ -16,7 +17,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha)
     numVoxels = ydim * xdim; 
     Y = reshape(Y, numVoxels, n);
     Y = Y'; 
-    sigma = 1e3;                                
+                                  
 
     % Design matrix
     A = zeros(n, m);                           
@@ -31,11 +32,15 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha)
     r2   = cell(numLambda, numVoxels);            
     recursiveMSE  = cell(numLambda,numVoxels);             
     recursiveNMSE = cell(numLambda,numVoxels);
+    recursiveEMA_SE = cell(numLambda,numVoxels);
+    recursiveEMA_noise = cell(numLambda,numVoxels);
     all_k = cell(numLambda, numVoxels);                 
     all_yhat = cell(numLambda, numVoxels);              
 
-    %% RLS for each candidate lambda   
-   parfor v = 1:numVoxels
+    %% RLS for each candidate lambda 
+    eps = 1e-3;     % stabilize NMSE calculation
+    sigma = 1e3;    % initialization factor for the inverse covariance matrix
+    parfor v = 1:numVoxels
         y = Y(:,v);
         for ii = 1:numLambda
             lambda = lambdaCandidates(ii);  
@@ -45,14 +50,18 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha)
             k_t = zeros(m,n);
             P = sigma * eye(m); %L2 norm
 
-            % Initialize running values
+            % Initialize running values for PCV 
             runningMeanY = mean(y(1:m-1));
             runningVarY = var(y(1:m-1));
-            mse = nan(1,n);
-            nmse = nan(1,n);
+            running_mse = nan(1,n);                 % output prediction
+            running_nmse = nan(1,n);                % output prediction
+            ema_se = nan(1,n);
+            ema_noise = nan(1,n);
+            ema_se(m-1) = var(y(1:m-1)); 
+            ema_noise(m-1) = var(y(1:m-1)); 
 
             % Recursion
-            for t = (m-1):n %start from when you have enough inputs
+            for t = (m-1):n  %truncate
                 x = A(t,:)';
 
                 % Kalman gain
@@ -64,20 +73,27 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha)
                 yhat = x' * k;
                 err = y(t) - yhat;
 
-                % Update running mean and variance
+                % Update metrics
                 if t > (m-1)
                     runningMeanY = ((t - 1) * runningMeanY + y(t)) / t;
                     deltaY = y(t) - runningMeanY;
                     runningVarY = ((t - 1) * runningVarY + deltaY^2) / t;
+                    ema_se(t) = (alpha * ema_se(t-1)) + (1 - alpha) * err^2;
+                    if norm(x)^2 == 0
+                        ema_noise(t) = (beta * ema_noise(t-1)) + (1 - beta) * err^2;
+                    else
+                        ema_noise(t) = ema_noise(t-1);
+                    end
                 end
 
-                % Update running MSE and NMSE
+                % Update model evaluation metrics
                 if t == (m-1)
-                    mse(t) = err^2;
+                    running_mse(t) = err^2;
+                    running_nmse(t) = running_mse(t) / (runningVarY + eps);
                 else
                     numPoints = t - (m - 1) + 1;
-                    mse(t) = (((numPoints-1) * mse(t - 1) + err^2) / numPoints);
-                    nmse(t) = mse(t) / runningVarY;
+                    running_mse(t) = (((numPoints-1) * running_mse(t - 1) + err^2) / numPoints);
+                    running_nmse(t) = running_mse(t) / (runningVarY + eps);
                 end
 
                 % Update kernel
@@ -100,8 +116,10 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha)
             % Store lambda-specific parameters for each voxel
             all_k{ii,v} = k_t;
             all_yhat{ii,v} = batch_yhat;
-            recursiveMSE{ii,v} = mse; 
-            recursiveNMSE{ii,v} = nmse;
+            recursiveMSE{ii,v} = running_mse; 
+            recursiveNMSE{ii,v} = running_nmse;
+            recursiveEMA_SE{ii,v} = ema_se;
+            recursiveEMA_noise{ii,v} = ema_noise;
         end
     end
 
@@ -109,10 +127,11 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha)
     rls = struct;
     rls.recursiveMSE = recursiveMSE;
     rls.recursiveNMSE = recursiveNMSE; 
+    rls.recursiveEMA_SE = recursiveEMA_SE;
+    rls.recursiveEMA_noise = recursiveEMA_noise;
     rls.r2 = r2; 
     rls.all_k = all_k;
     rls.all_y = all_yhat;
     rls.designMat = A;
 
-   
 end

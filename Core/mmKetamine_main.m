@@ -32,19 +32,19 @@ TMS_onset.rat13 = 2300;
 TMS_onset.rat14 = 1800;
 
 % specify samples
-sampleName = allRats{3};
+sampleName = allRats{2};
 idx = sample_idx.(sampleName);
 filename =[sampleName '.scan'];
 
 %update data path
-data_path = [data_path '/' allRats{3} '/figures'];
+data_path = [data_path '/' sampleName '/figures_20250324'];
 
 %% preprocess
 mat4D = h5read(filename, '/Data');
 mat3D = permute(squeeze(mat4D), [2 1 3]);
 filt_params = struct('fs', 1, 'fc1', 0.01, 'fc2', 0.3,...
                      'filtType','bandpass', 'order',4,...
-                     'filtOpt', 1);
+                     'filtOpt', 0);
 norm_params = struct('duration',720);
 Mpreproc = preprocFUSI(mat3D, filt_params, norm_params); 
 Mpreproc = Mpreproc(:,:,1:TMS_onset.(sampleName)); % cut after TMS
@@ -117,31 +117,34 @@ saveas(gcf, fullfile(data_path, 's1_representative_signal.fig'));
    
 %% RLS 
 
-% potential hyperparameters:
+% define hyperparameters:
 lambdas = [0.8 0.9 0.95 0.99...
-           0.993 0.996 0.999]; %forgetting factor
-alpha = 0;
+           0.993 0.996 0.999]; % forgetting factor
+
+alpha = 0.95;                  %  track a-prior error for misalignment
+beta = 0.995;                  %  track noise floor for misalignment
 
 m = 80;             
 
 tic;
-rls = optRLS(Mpreproc, binaryEvent1, m, lambdas, alpha);
+rls = optRLS(Mpreproc, binaryEvent1, m, lambdas, alpha, beta);
 toc;
 
 
 %% compare NMSE for each lambda for a representative voxel
 [linear_idx] = sub2ind([dim.y dim.x], idx(2,1), idx(2,2));
-
-% NMSE for S1
-rls_nmse = rls.recursiveNMSE(:,linear_idx);
 labels = cell(1,length(lambdas));
+
+% NMSE (output prediction) for S1
+rls_nmse = rls.recursiveNMSE(:,linear_idx);
 figure; 
+sgtitle('Output Prediction Error','fontsize', 20, 'fontweight', 'b');
 for i = 1:length(lambdas)
     plot(rls_nmse{i}, 'LineWidth', 2);
     hold on;
     labels{i} = sprintf('λ = %.4f', lambdas(i));
 end
-xlim([1 dim.t]);
+xlim([m dim.t]);
 xlabel('Seconds');
 ylabel('NMSE');
 set(gca,'fontsize',18);
@@ -149,6 +152,25 @@ legend(labels);
 
 % save 
 saveas(gcf, fullfile(data_path, 's1_representative_nmse.fig'));
+
+% Alignment for S1
+se = rls.recursiveEMA_SE(:,linear_idx);
+noise = rls.recursiveEMA_noise(:,linear_idx);
+
+figure;
+sgtitle('Alignment','fontsize', 20, 'fontweight', 'b');
+for i = 1:length(lambdas)
+    alignment = se{i} - noise{i};
+    plot(alignment, 'LineWidth', 2);
+    hold on;
+    labels{i} = sprintf('λ = %.4f', lambdas(i));
+end
+xlim([m dim.t]);
+xlabel('Seconds');
+ylabel('e(t)^2 - \sigma_\eta^2');
+set(gca,'fontsize',18);
+legend(labels);
+
 
 %% extract the optimal lambda for each voxel
 
