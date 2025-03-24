@@ -132,7 +132,8 @@ toc;
 
 
 %% compare NMSE for each lambda for a representative voxel
-[linear_idx] = sub2ind([dim.y dim.x], idx(2,1), idx(2,2));
+M2D = double(reshape(Mpreproc, numVoxels, dim.t));
+linear_idx = sub2ind([dim.y dim.x], idx(2,1), idx(2,2));
 labels = cell(1,length(lambdas));
 
 % NMSE (output prediction) for S1
@@ -154,14 +155,13 @@ legend(labels);
 saveas(gcf, fullfile(data_path, 's1_representative_nmse.fig'));
 
 % Alignment for S1
-se = rls.recursiveEMA_SE(:,linear_idx);
-noise = rls.recursiveEMA_noise(:,linear_idx);
+alignment = rls.Alignment(:,linear_idx);
 
 figure;
 sgtitle('Alignment','fontsize', 20, 'fontweight', 'b');
 for i = 1:length(lambdas)
-    alignment = se{i} - noise{i};
-    plot(alignment, 'LineWidth', 2);
+    xx = alignment{i};
+    plot(x, 'LineWidth', 2);
     hold on;
     labels{i} = sprintf('λ = %.4f', lambdas(i));
 end
@@ -221,8 +221,7 @@ set(gca,'fontsize',18);
 saveas(gcf, fullfile(data_path, 'lambda_histogram.fig'));
 
 %% plot fit for representative voxel (all lambdas)
-M2D = double(reshape(Mpreproc, numVoxels, dim.t));
-linear_idx = sub2ind([dim.y dim.x], idx(2,1), idx(2,2));
+
 y_original = M2D(linear_idx,:);
 y = y_original(m:end); % truncate to match yhat length
 

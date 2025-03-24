@@ -18,7 +18,6 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha, beta)
     Y = reshape(Y, numVoxels, n);
     Y = Y'; 
                                   
-
     % Design matrix
     A = zeros(n, m);                           
     for i = 1:m
@@ -27,15 +26,15 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha, beta)
     A = [ones(n, 1), A]; % bias term  
     m = size(A,2);       % update the number of coefficients
 
-    % Initialize variables for grid search over lambda 
+    % Initialize variables
     numLambda  = length(lambdaCandidates);
     r2   = cell(numLambda, numVoxels);            
     recursiveMSE  = cell(numLambda,numVoxels);             
     recursiveNMSE = cell(numLambda,numVoxels);
-    recursiveEMA_SE = cell(numLambda,numVoxels);
-    recursiveEMA_noise = cell(numLambda,numVoxels);
+    recursiveAlignment = cell(numLambda,numVoxels);
     all_k = cell(numLambda, numVoxels);                 
-    all_yhat = cell(numLambda, numVoxels);              
+    all_yhat = cell(numLambda, numVoxels);  
+
 
     %% RLS for each candidate lambda 
     eps = 1e-3;     % stabilize NMSE calculation
@@ -53,6 +52,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha, beta)
             % Initialize running values for PCV 
             runningMeanY = mean(y(1:m-1));
             runningVarY = var(y(1:m-1));
+            runningVarY_vec = nan(1,n);
             running_mse = nan(1,n);                 % output prediction
             running_nmse = nan(1,n);                % output prediction
             ema_se = nan(1,n);
@@ -63,7 +63,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha, beta)
             % Recursion
             for t = (m-1):n  %truncate
                 x = A(t,:)';
-
+                
                 % Kalman gain
                 Px = P * x; 
                 denom = lambda + (x' * Px);
@@ -78,9 +78,10 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha, beta)
                     runningMeanY = ((t - 1) * runningMeanY + y(t)) / t;
                     deltaY = y(t) - runningMeanY;
                     runningVarY = ((t - 1) * runningVarY + deltaY^2) / t;
-                    ema_se(t) = (alpha * ema_se(t-1)) + (1 - alpha) * err^2;
+                    runningVarY_vec(t) = runningVarY;
+                    ema_se(t) = ((alpha * ema_se(t-1)) + (1 - alpha) * err^2);
                     if norm(x)^2 == 0
-                        ema_noise(t) = (beta * ema_noise(t-1)) + (1 - beta) * err^2;
+                        ema_noise(t) = ((beta * ema_noise(t-1)) + (1 - beta) * err^2);
                     else
                         ema_noise(t) = ema_noise(t-1);
                     end
@@ -118,8 +119,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha, beta)
             all_yhat{ii,v} = batch_yhat;
             recursiveMSE{ii,v} = running_mse; 
             recursiveNMSE{ii,v} = running_nmse;
-            recursiveEMA_SE{ii,v} = ema_se;
-            recursiveEMA_noise{ii,v} = ema_noise;
+            recursiveAlignment{ii,v} = (ema_se - ema_noise) ./ (runningVarY_vec + eps);
         end
     end
 
@@ -127,8 +127,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha, beta)
     rls = struct;
     rls.recursiveMSE = recursiveMSE;
     rls.recursiveNMSE = recursiveNMSE; 
-    rls.recursiveEMA_SE = recursiveEMA_SE;
-    rls.recursiveEMA_noise = recursiveEMA_noise;
+    rls.Alignment = recursiveAlignment;
     rls.r2 = r2; 
     rls.all_k = all_k;
     rls.all_y = all_yhat;
