@@ -80,11 +80,7 @@ function [rls] = optRLS(Y, u, m, lambdaCandidates, alpha, beta)
                     runningVarY = ((t - 1) * runningVarY + deltaY^2) / t;
                     runningVarY_vec(t) = runningVarY;
                     ema_se(t) = ((alpha * ema_se(t-1)) + (1 - alpha) * err^2);
-                    if norm(x)^2 == 0
-                        ema_noise(t) = ((beta * ema_noise(t-1)) + (1 - beta) * err^2);
-                    else
-                        ema_noise(t) = ema_noise(t-1);
-                    end
+                    ema_noise(t) = ((beta * ema_noise(t-1)) + (1 - beta) * err^2);
                 end
 
                 % Update model evaluation metrics
